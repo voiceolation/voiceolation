@@ -6,7 +6,7 @@ import numpy as np
 from config import *
 from tqdm import tqdm 
 
-db_train = "C:/Users/emiry/Desktop/Voiceolation/musdb/train"
+db_train = "./musdb/train"
 def process(): 
     parent = os.path.dirname(os.path.dirname(db_train))
     db = os.listdir(db_train)

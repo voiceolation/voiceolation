@@ -1,41 +1,53 @@
-import numpy as np
-from librosa.core import istft, load, stft, magphase
-import keras as keras
+import os
+import sys
 
 from config import *
-from util import * 
+from util import *
+
+import numpy as np
 from keras.models import model_from_json
+from tqdm import tqdm
+from librosa.util import find_files
+from pydub import AudioSegment
 
 if __name__ == '__main__':
     # load test audio and convert to mag/phase
-    music_path = "./mixture.wav"
-    mix_wav_mag, mix_wav_phase = load_audio("./mixture.wav")
-    vocal_wav_mag, vocal_wav_phase = load_audio("./vocals.wav")
-    START = 60
-    END = START + patch_size  # 11 seconds
+    mix_wav_mag, mix_wav_phase = load_audio(sys.argv[1])
 
-    mix_wav_mag=mix_wav_mag[:, START:END]
-    mix_wav_phase=mix_wav_phase[:, START:END]
+    if not os.path.exists('./_temp'):
+        os.makedirs('./_temp')
 
-    vocal_wav_mag=vocal_wav_mag[:, START:END]
-    vocal_wav_phase=vocal_wav_phase[:, START:END]
     # load saved model
-    #model = keras.models.load_model('../models/vocal_20_test_model.h5')
     file = open('./models/colab-diff3-mse/model.json', 'r')
     model_json = file.read()
     file.close()
     model = model_from_json(model_json)
-        # load weights
+    # load weights
     model.load_weights('./models/colab-diff3-mse/model.h5')
 
     # predict and write into file
     print("Predicting...")
-    x=mix_wav_mag[1:].reshape(1, 512, patch_size, 1)
-    y=model.predict(x, batch_size=BATCH)
+    for index in tqdm(range(0, mix_wav_mag.shape[1], patch_size)):
+            if(index+patch_size > mix_wav_mag.shape[1]):
+                offset = (index+patch_size) - mix_wav_mag.shape[1] 
+                w = ((0,0), (0,offset))
+                mix_wav_mag = np.pad(mix_wav_mag, w, 'constant')
+                mix_wav_phase = np.pad(mix_wav_phase, w, 'constant')
 
-    target_pred_mag = np.vstack((np.zeros((patch_size)), y.reshape(512, patch_size)))
-    save_audio("./pred.wav",target_pred_mag,mix_wav_phase)
-    save_audio("./target.wav",vocal_wav_mag,vocal_wav_phase)
+            mix_mag = mix_wav_mag[:, index:index+patch_size]
+            mix_phase = mix_wav_phase[:, index:index+patch_size]
+            pred_mag = model.predict(mix_mag[1:].reshape(1, 512, patch_size, 1), batch_size=BATCH)
+            pred_mag = np.vstack((np.zeros((patch_size)), pred_mag.reshape(512, patch_size)))
+            save_audio("./_temp/pred" + str(index//patch_size)+".wav", pred_mag, mix_phase)
 
-    plot_spectrogram("./pred.wav")
-    plot_spectrogram("./target.wav")
+    filenames = find_files("./_temp",ext="wav")
+    combined = AudioSegment.empty()
+    for filename in filenames:
+        audio = AudioSegment.from_wav(filename)
+        combined += audio
+        os.remove(filename)
+    try:
+        os.remove("./_temp")
+    except PermissionError:
+        pass    
+    combined.export("./output.wav", format="wav")

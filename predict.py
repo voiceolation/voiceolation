@@ -49,5 +49,6 @@ if __name__ == '__main__':
     try:
         os.remove("./_temp")
     except PermissionError:
-        pass    
+        pass
+    combined = combined.set_channels(2)
     combined.export("./output.wav", format="wav")

@@ -79,8 +79,8 @@ if __name__ == '__main__':
 		combined.export("./predict/pred/" + filename + ".wav", format="wav")
 
 	try:
-		os.remove('./predict/pred/_temp')
-		os.remove('./predict/target/_temp')
+		os.rmdir('./predict/pred/_temp')
+		os.rmdir('./predict/target/_temp')
 	except PermissionError:
 		pass 
 

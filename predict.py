@@ -47,7 +47,7 @@ if __name__ == '__main__':
         combined += audio
         os.remove(filename)
     try:
-        os.remove("./_temp")
+        os.rmdir("./_temp")
     except PermissionError:
         pass
     combined = combined.set_channels(2)

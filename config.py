@@ -1,7 +1,7 @@
-SR =  16000
+SR =  11025
 window_size = 1024
-hop_length = 768
-patch_size = 256 
+hop_length = 256
+patch_size = 128 
 
 ## for training
 EPOCH = 5

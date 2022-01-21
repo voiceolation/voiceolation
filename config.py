@@ -4,6 +4,6 @@ hop_length = 256
 patch_size = 128 
 
 ## for training
-EPOCH = 5
+EPOCH = 3
 BATCH = 32
-SAMPLING_STRIDE = 10
+SAMPLING_STRIDE = 50
